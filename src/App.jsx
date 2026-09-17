@@ -41,11 +41,11 @@ export default function App() {
     <main>
       <header className="hero">
         <div>
-          <p className="eyebrow">REACT · CONTAINER · LAZYCAT</p>
+          <p className="eyebrow">REACT · CONTAINER · DESIGN</p>
           <h1>Poster Lab</h1>
         </div>
         <p className="intro">
-          一个小型 React 海报展，用来验证从 Docker 镜像更新到懒猫微服应用审核的完整自动化链路。
+          一个小型 React 海报展，用简洁的版式呈现城市灵感与日常片段。
         </p>
       </header>
 
