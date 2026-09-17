@@ -1,0 +1,56 @@
+name: Publish Poster to LazyCat
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+  workflow_run:
+    workflows: [Publish Poster image]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: poster-lazycat-release
+  cancel-in-progress: false
+
+jobs:
+  prerequisites:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - name: Check PAT and public source image
+        id: check
+        shell: bash
+        env:
+          LZC_API_TOKEN: ${{ secrets.LZC_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          ready=true
+          if [[ -z "${LZC_API_TOKEN}" ]]; then
+            echo "::warning::Add the LazyCat developer PAT as repository secret LZC_API_TOKEN."
+            ready=false
+          fi
+          if ! docker manifest inspect ghcr.io/wcaqrl/poster:latest >/dev/null 2>&1; then
+            echo "::warning::Publish ghcr.io/wcaqrl/poster:latest and make the package public."
+            ready=false
+          fi
+          echo "ready=${ready}" >>"${GITHUB_OUTPUT}"
+
+  lazycat:
+    needs: prerequisites
+    if: needs.prerequisites.outputs.ready == 'true'
+    uses: wcaqrl/lazycat-action/.github/workflows/lazycat.yml@v1
+    with:
+      operation: auto
+      config: .github/lazycat-action.yml
+      changelog: |
+        更新 Poster React 应用镜像并重新生成懒猫微服安装包。
+        Update the Poster React image and rebuild the LazyCat package.
+      versioned-release-asset: true
+    secrets:
+      LZC_API_TOKEN: ${{ secrets.LZC_API_TOKEN }}
